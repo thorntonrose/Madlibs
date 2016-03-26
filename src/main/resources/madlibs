@@ -1,0 +1,31 @@
+#!/bin/bash
+
+case $1 in
+   start)
+      shift
+      lcp=.
+      for f in ./lib/* ; do lcp=$lcp:$f ; done
+      [ "$OSTYPE" == "cygwin" ] && lcp=$(cygpath -wp "$lcp")
+      rm -rf *.log
+      "$JAVA_HOME/bin/java" \
+         -Dapp=@NAME@-@VERSION@ \
+         -Djava.util.logging.config.file=logging.properties \
+         -cp "$lcp" $JAVA_OPTS \
+         @MAIN_CLASS@ $* >start.log 2>&1 &
+      ;;
+
+   stop)
+      pid=$(jps -v | grep @NAME@-@VERSION@ | cut -f 1 -d ' ')
+      [ "$pid" == "" ] && exit 0
+      [ "$OSTYPE" == "cygwin" ] && /bin/kill -f $pid || kill -9 $pid
+      echo "@NAME@-@VERSION@ ($pid) stopped"
+      ;;
+
+   status)
+      proc=$(jps -v | grep @NAME@-@VERSION@)
+      [ "$proc" == "" ] && echo "stopped" || echo "running"
+      ;;
+
+   *)
+      echo "Usage: $0 {start [<args>] | stop | status}"
+esac
